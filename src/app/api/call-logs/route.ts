@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
+import { getEnv } from '@/lib/env'
 
 // GET /api/call-logs - List all call logs
-export async function GET(request: NextRequest) {
-  try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({
-        error: 'Supabase not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
-      }, { status: 500 })
-    }
+async function handler(request: NextRequest) {
+  const env = getEnv()
+  if (!env) {
+    return NextResponse.json({
+      error: 'Environment not configured'
+    }, { status: 500 })
+  }
 
+  try {
     const { searchParams } = new URL(request.url)
     const botId = searchParams.get('bot_id')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Cap at 100
 
     let query = supabase
       .from('call_logs')
@@ -47,3 +52,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const GET = withMonitoring(withRateLimit(requireAuth(handler)), 'get-call-logs')

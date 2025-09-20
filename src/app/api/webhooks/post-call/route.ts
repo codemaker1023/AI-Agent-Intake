@@ -1,25 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { validateWebhookRequest } from '@/lib/webhook'
+import { validateRequest } from '@/lib/validation'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
+import { extractPatientIdFromCall } from '@/lib/patient'
+import { getEnv } from '@/lib/env'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
+  const env = getEnv()
+  if (!env) {
+    return NextResponse.json({
+      error: 'Environment not configured'
+    }, { status: 500 })
+  }
+
+  // Validate webhook signature and payload
+  const webhookValidation = await validateWebhookRequest(request)
+  if (!webhookValidation.isValid) {
+    const errorMessage = webhookValidation.errors ?
+      `Validation failed: ${webhookValidation.errors.join(', ')}` :
+      'Invalid webhook signature'
+    return NextResponse.json({
+      error: errorMessage
+    }, { status: webhookValidation.errors ? 400 : 401 })
+  }
+
+  const {
+    call_id,
+    bot_id,
+    transcript,
+    summary,
+    duration,
+    status,
+    metadata,
+    function_calls,
+    patient_id
+  } = webhookValidation.body
+
   try {
-    const body = await request.json()
-    console.log('Post-call webhook received:', JSON.stringify(body, null, 2))
-    console.log('Available fields:', Object.keys(body))
-
-    // Extract relevant data from the webhook payload
-    const {
-      call_id,
-      bot_id,
-      transcript,
-      summary,
-      duration,
-      status,
-      metadata,
-      function_calls,
-      patient_id 
-    } = body
-
     console.log('Looking for bot with ID:', bot_id)
     let { data: bot, error: botError } = await supabase
       .from('bots')
@@ -52,33 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     let patientId = null
-    let patientMedicalId = null
-    if (patient_id) {
-      patientMedicalId = patient_id
-    }
-
-    if (!patientMedicalId && function_calls && Array.isArray(function_calls)) {
-      const patientFunctionCall = function_calls.find((call: any) =>
-        call.function === 'fetch_patient' ||
-        call.name === 'fetch_patient' ||
-        (call.arguments && call.arguments.medical_id)
-      )
-
-      if (patientFunctionCall) {
-        if (patientFunctionCall.arguments?.medical_id) {
-          patientMedicalId = patientFunctionCall.arguments.medical_id
-        } else if (patientFunctionCall.arguments?.id) {
-          patientMedicalId = patientFunctionCall.arguments.id
-        }
-      }
-    }
-
-    if (!patientMedicalId && transcript) {
-      const medicalIdMatch = transcript.match(/MED\d{3}/i)
-      if (medicalIdMatch) {
-        patientMedicalId = medicalIdMatch[0].toUpperCase()
-      }
-    }
+    const patientMedicalId = patient_id || await extractPatientIdFromCall(function_calls, transcript)
 
     // Find patient in database
     if (patientMedicalId) {
@@ -133,3 +126,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const POST = withMonitoring(withRateLimit(handler), 'post-call-webhook')

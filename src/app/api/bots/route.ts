@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
+import { validateRequest } from '@/lib/validation'
+import { getEnv } from '@/lib/env'
 
 // GET /api/bots - List all bots
-export async function GET() {
-  try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({
-        error: 'Supabase not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
-      }, { status: 500 })
-    }
+async function getHandler(request: NextRequest) {
+  const env = getEnv()
+  if (!env) {
+    return NextResponse.json({
+      error: 'Environment not configured'
+    }, { status: 500 })
+  }
 
+  try {
     const { data, error } = await supabase
       .from('bots')
       .select('*')
@@ -28,30 +34,23 @@ export async function GET() {
 }
 
 // POST /api/bots - Create a new bot
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
+  const env = getEnv()
+  if (!env) {
+    return NextResponse.json({
+      error: 'Environment not configured'
+    }, { status: 500 })
+  }
+
+  const body = await request.json()
+  console.log('Received body:', body)
+  const { uid, name, prompt, domain } = body
+
+  if (!uid || !name || !prompt) {
+    return NextResponse.json({ error: 'UID, name, and prompt are required' }, { status: 400 })
+  }
+
   try {
-    console.log('Environment check:', {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET',
-      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
-    })
-
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({
-        error: 'Supabase not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local',
-        env_status: {
-          url_set: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-          key_set: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        }
-      }, { status: 500 })
-    }
-
-    const body = await request.json()
-    const { uid, name, prompt, domain } = body
-
-    if (!uid || !name || !prompt) {
-      return NextResponse.json({ error: 'UID, name, and prompt are required' }, { status: 400 })
-    }
-
     const { data, error } = await supabase
       .from('bots')
       .insert({
@@ -83,3 +82,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const GET = withMonitoring(withRateLimit(getHandler), 'get-bots')
+export const POST = withMonitoring(withRateLimit(postHandler), 'create-bot')

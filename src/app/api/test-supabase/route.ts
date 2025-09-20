@@ -1,13 +1,25 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
+import { getEnv } from '@/lib/env'
 
-export async function GET() {
+async function handler(request: NextRequest) {
   try {
+    const env = getEnv()
     const envCheck = {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET',
-      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
-      url_value: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...',
-      key_value: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 10) + '...'
+      url: env ? 'SET' : 'NOT SET',
+      key: env ? 'SET' : 'NOT SET',
+      url_value: env?.supabaseUrl?.substring(0, 30) + '...' : 'NOT SET',
+      key_value: env?.supabaseKey?.substring(0, 10) + '...' : 'NOT SET'
+    }
+
+    if (!env) {
+      return NextResponse.json({
+        status: 'error',
+        environment: envCheck,
+        message: 'Environment not configured'
+      }, { status: 500 })
     }
 
     const { data, error } = await supabase
@@ -41,3 +53,5 @@ export async function GET() {
     }, { status: 500 })
   }
 }
+
+export const GET = withMonitoring(withRateLimit(handler), 'test-supabase')

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
 
 // GET /api/bots/[id] - Get a specific bot
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -26,7 +29,7 @@ export async function GET(
 }
 
 // PUT /api/bots/[id] - Update a bot
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -61,7 +64,7 @@ export async function PUT(
 }
 
 // DELETE /api/bots/[id] - Delete a bot
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -82,3 +85,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const GET = withMonitoring(withRateLimit(getHandler), 'get-bot')
+export const PUT = withMonitoring(withRateLimit(putHandler), 'update-bot')
+export const DELETE = withMonitoring(withRateLimit(deleteHandler), 'delete-bot')

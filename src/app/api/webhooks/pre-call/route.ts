@@ -1,42 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { validateWebhookRequest } from '@/lib/webhook'
+import { validateRequest } from '@/lib/validation'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
+import { lookupPatient } from '@/lib/patient'
+import { getEnv } from '@/lib/env'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
+  const env = getEnv()
+  if (!env) {
+    return NextResponse.json({
+      error: 'Environment not configured'
+    }, { status: 500 })
+  }
+
+  // Validate webhook signature and payload
+  const webhookValidation = await validateWebhookRequest(request)
+  if (!webhookValidation.isValid) {
+    const errorMessage = webhookValidation.errors ?
+      `Validation failed: ${webhookValidation.errors.join(', ')}` :
+      'Invalid webhook signature'
+    return NextResponse.json({
+      error: errorMessage
+    }, { status: webhookValidation.errors ? 400 : 401 })
+  }
+
+  const { from, to, call_id, bot_id } = webhookValidation.body
+
   try {
-    const body = await request.json()
-    console.log('Pre-call webhook received:', body)
-
-    const { from, to, call_id, bot_id } = body
-
-    let patientData = null
-    let contextMessage = 'No patient data available. Please have the caller provide their medical ID during the conversation.'
-
-    if (from) {
-      // Try to find patient by phone number
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .eq('phone', from)
-        .single()
-
-      if (!error && data) {
-        patientData = data
-        contextMessage = `Patient Information: Name: ${data.name}, Medical ID: ${data.medical_id}, Allergies: ${data.allergies || 'None reported'}, Current Medications: ${data.current_medications || 'None'}, Medical History: ${data.medical_history || 'No significant history'}, Last Call Summary: ${data.last_call_summary || 'No previous calls'}`
-      }
-    }
-
-    if (!patientData) {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .limit(1)
-        .single()
-
-      if (!error && data) {
-        patientData = data
-        contextMessage = `Example Patient Data (for demo): Name: ${data.name}, Medical ID: ${data.medical_id}. In a real scenario, verify patient identity during the call.`
-      }
-    }
+    const { patientData, contextMessage } = await lookupPatient(from)
 
     // Return data that will be injected into the call context
     return NextResponse.json({
@@ -57,3 +49,5 @@ export async function POST(request: NextRequest) {
     }, { status: 500 })
   }
 }
+
+export const POST = withMonitoring(withRateLimit(handler), 'pre-call-webhook')

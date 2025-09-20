@@ -1,19 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { validateRequest } from '@/lib/validation'
+import { requireAuth } from '@/lib/auth'
+import { withRateLimit } from '@/lib/rate-limit'
+import { withMonitoring } from '@/lib/monitoring'
+import { isValidMedicalId } from '@/lib/validation'
+import { getEnv } from '@/lib/env'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
+  const env = getEnv()
+  if (!env) {
+    return NextResponse.json({
+      error: 'Environment not configured'
+    }, { status: 500 })
+  }
+
+  // Validate and sanitize input
+  const validation = await validateRequest(request)
+  if (!validation.isValid) {
+    return validation.response!
+  }
+
+  const { medical_id } = validation.body
+
+  if (!medical_id || !isValidMedicalId(medical_id)) {
+    return NextResponse.json({
+      error: 'Valid medical ID is required'
+    }, { status: 400 })
+  }
+
   try {
-    const body = await request.json()
-    console.log('Function call received:', body)
-
-    const { medical_id } = body
-
-    if (!medical_id) {
-      return NextResponse.json({
-        error: 'Medical ID is required'
-      }, { status: 400 })
-    }
-
     const { data: patient, error } = await supabase
       .from('patients')
       .select(`
@@ -21,7 +37,7 @@ export async function POST(request: NextRequest) {
         medications (*),
         appointments (*)
       `)
-      .eq('medical_id', medical_id)
+      .eq('medical_id', medical_id.toUpperCase())
       .single()
 
     if (error) {
@@ -58,3 +74,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const POST = withMonitoring(withRateLimit(handler), 'fetch-patient')
