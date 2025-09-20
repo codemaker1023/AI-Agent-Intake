@@ -20,25 +20,50 @@ async function handler(request: NextRequest) {
     const errorMessage = webhookValidation.errors ?
       `Validation failed: ${webhookValidation.errors.join(', ')}` :
       'Invalid webhook signature'
+    console.log('Webhook validation failed:', errorMessage)
     return NextResponse.json({
       error: errorMessage
     }, { status: webhookValidation.errors ? 400 : 401 })
   }
 
-  const { from, to, call_id, bot_id } = webhookValidation.body
+  // Openmic pre-call payload structure
+  const body = webhookValidation.body
+  console.log('Raw pre-call payload:', JSON.stringify(body, null, 2))
+  const call = body.call || body // Handle if call is not wrapped
+  const { bot_id, from_number, to_number, attempt } = call
 
   try {
-    const { patientData, contextMessage } = await lookupPatient(from)
+    console.log('Pre-call webhook received:', { bot_id, from_number, attempt })
 
-    // Return data that will be injected into the call context
+    // Lookup patient by phone number
+    const { patientData } = await lookupPatient(from_number)
+
+    // Extract names from webhook payload if available
+    const payloadCustomerName = call.customer_name || call.patient_name
+    const payloadBotName = call.bot_name || call.assistant_name
+
+    // Validate required fields from payload
+    if (!payloadCustomerName && !patientData?.name) {
+      console.log('No customer name found in payload or database')
+      return NextResponse.json({
+        error: 'Customer name required in webhook payload'
+      }, { status: 400 })
+    }
+
+    // Format response for Openmic
+    const dynamicVariables = {
+      customer_name: payloadCustomerName || patientData?.name,
+      bot_name: payloadBotName || '',
+      medical_id: patientData?.medical_id || '',
+      allergies: patientData?.allergies || 'None reported',
+      current_medications: patientData?.current_medications || 'None',
+      medical_history: patientData?.medical_history || 'No significant history',
+      last_call_summary: patientData?.last_call_summary || 'No previous calls'
+    }
+
     return NextResponse.json({
-      patient_data: patientData,
-      context: contextMessage,
-      call_details: {
-        from: from,
-        to: to,
-        call_id: call_id,
-        bot_id: bot_id
+      call: {
+        dynamic_variables: dynamicVariables
       }
     })
   } catch (error) {

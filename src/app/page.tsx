@@ -199,21 +199,19 @@ export default function Home() {
           <div className="flex space-x-1">
             <button
               onClick={() => setActiveTab('bots')}
-              className={`px-6 py-2 text-sm font-medium rounded-lg transition-all ${
-                activeTab === 'bots'
+              className={`px-6 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'bots'
                   ? 'bg-gray-900 text-white shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Assistants
             </button>
             <button
               onClick={() => setActiveTab('logs')}
-              className={`px-6 py-2 text-sm font-medium rounded-lg transition-all ${
-                activeTab === 'logs'
+              className={`px-6 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'logs'
                   ? 'bg-gray-900 text-white shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Analytics
             </button>
@@ -378,9 +376,8 @@ export default function Home() {
                               {bot.domain}
                             </div>
                             <div className="text-sm w-20">
-                              <span className={`px-2 py-1 rounded-full ${
-                                bot.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full ${bot.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
                                 {bot.is_active ? 'Active' : 'Inactive'}
                               </span>
                             </div>
@@ -423,14 +420,16 @@ export default function Home() {
                 <h2 className="text-2xl font-bold text-gray-900">Call History</h2>
                 <p className="text-gray-600">Recent conversations and outcomes</p>
               </div>
-              <button
-                onClick={fetchCallLogs}
-                className="text-gray-600 hover:text-gray-900 p-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={fetchCallLogs}
+                  className="text-gray-600 hover:text-gray-900 p-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {callLogs.length === 0 ? (
@@ -481,20 +480,19 @@ export default function Home() {
                             <h3 className="font-semibold text-gray-900">{log.patients?.name || 'Unknown Patient'}</h3>
                           </div>
                           <div className="text-sm text-gray-600 w-32 truncate">
-                            {log.bots?.name || 'Unknown Assistant'}
+                            {log.bots?.name || log.bots?.uid || 'Unknown Assistant'}
                           </div>
                           <div className="text-sm text-gray-500 w-40">
                             {new Date(log.created_at).toLocaleDateString()} {new Date(log.created_at).toLocaleTimeString()}
                           </div>
                           <div className="text-sm text-gray-600 w-20">
-                            {log.duration ? `${Math.floor(log.duration / 60)}:${(log.duration % 60).toString().padStart(2, '0')}` : 'N/A'}
+                            {log.duration && !isNaN(Number(log.duration)) ? `${Math.floor(Number(log.duration) / 60)}:${(Number(log.duration) % 60).toString().padStart(2, '0')}` : 'N/A'}
                           </div>
                           <div className="text-sm w-24">
-                            <span className={`px-2 py-1 rounded-full ${
-                              log.status === 'completed' ? 'bg-green-100 text-green-800' :
-                              log.status === 'failed' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full ${log.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                log.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                              }`}>
                               {log.status || 'Unknown'}
                             </span>
                           </div>

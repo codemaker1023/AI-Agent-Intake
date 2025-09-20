@@ -30,11 +30,16 @@ export function validateWebhookPayload(body: any): { isValid: boolean; sanitized
   const errors: string[] = [];
   const sanitized: any = {};
 
-  // for pre-call
+  // Common fields for both pre-call and post-call
   if (body.call_id) {
     sanitized.call_id = sanitizeString(body.call_id);
   }
 
+  if (body.bot_id) {
+    sanitized.bot_id = sanitizeString(body.bot_id);
+  }
+
+  // for pre-call
   if (body.from) {
     sanitized.from = sanitizeString(body.from);
     if (!isValidPhone(sanitized.from)) {
@@ -46,10 +51,6 @@ export function validateWebhookPayload(body: any): { isValid: boolean; sanitized
     sanitized.to = sanitizeString(body.to);
   }
 
-  if (body.bot_id) {
-    sanitized.bot_id = sanitizeString(body.bot_id);
-  }
-
   // For post-call
   if (body.transcript) {
     sanitized.transcript = sanitizeString(body.transcript);
@@ -57,6 +58,27 @@ export function validateWebhookPayload(body: any): { isValid: boolean; sanitized
 
   if (body.summary) {
     sanitized.summary = sanitizeString(body.summary);
+  }
+
+  if (body.duration !== undefined) {
+    const duration = Number(body.duration);
+    if (isNaN(duration) || duration < 0) {
+      errors.push('Invalid duration');
+    } else {
+      sanitized.duration = duration;
+    }
+  }
+
+  if (body.status) {
+    sanitized.status = sanitizeString(body.status);
+  }
+
+  if (body.metadata) {
+    sanitized.metadata = body.metadata; // Assuming metadata is an object, no sanitization needed
+  }
+
+  if (body.function_calls) {
+    sanitized.function_calls = body.function_calls; // Assuming it's an array or object
   }
 
   if (body.patient_id) {
