@@ -103,7 +103,7 @@ export function validateWebhookPayload(body: unknown): { isValid: boolean; sanit
 }
 
 // Middleware function for input validation
-export async function validateRequest(request: NextRequest): Promise<{ isValid: boolean; body: unknown; response?: NextResponse }> {
+export async function validateRequest(request: NextRequest): Promise<{ isValid: boolean; body: Record<string, unknown>; response?: NextResponse }> {
   try {
     const body = await request.json();
     const validation = validateWebhookPayload(body);

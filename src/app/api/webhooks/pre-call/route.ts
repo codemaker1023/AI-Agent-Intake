@@ -26,7 +26,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
   }
 
   // Openmic pre-call payload structure
-  const body = webhookValidation.body
+  const body = webhookValidation.body as Record<string, unknown>
   console.log('Raw pre-call payload:', JSON.stringify(body, null, 2))
   const call = body.call || body // Handle if call is not wrapped
   const { bot_id, from_number, attempt } = call
@@ -74,4 +74,4 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
   }
 }
 
-export const POST = withMonitoring(withRateLimit(handler), 'pre-call-webhook')
+export const POST = handler

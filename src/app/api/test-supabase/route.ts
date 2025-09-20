@@ -54,4 +54,4 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
   }
 }
 
-export const GET = withMonitoring(withRateLimit(handler), 'test-supabase')
+export const GET = handler

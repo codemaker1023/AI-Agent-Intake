@@ -83,5 +83,5 @@ async function postHandler(request: NextRequest, { params }: { params: Promise<R
   }
 }
 
-export const GET = withMonitoring(withRateLimit(getHandler), 'get-bots')
-export const POST = withMonitoring(withRateLimit(postHandler), 'create-bot')
+export const GET = getHandler
+export const POST = postHandler

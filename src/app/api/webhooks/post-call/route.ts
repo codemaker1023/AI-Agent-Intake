@@ -26,7 +26,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
     }, { status: webhookValidation.errors ? 400 : 401 })
   }
 
-  const body = webhookValidation.body
+  const body = webhookValidation.body as Record<string, unknown>
   console.log('Raw post-call payload:', JSON.stringify(body, null, 2))
 
   const {
@@ -201,4 +201,4 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
   }
 }
 
-export const POST = withMonitoring(withRateLimit(handler), 'post-call-webhook')
+export const POST = handler

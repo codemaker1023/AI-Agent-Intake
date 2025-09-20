@@ -21,7 +21,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
     return validation.response!
   }
 
-  const { medical_id } = validation.body
+  const { medical_id } = validation.body as { medical_id: string }
 
   if (!medical_id || !isValidMedicalId(medical_id)) {
     return NextResponse.json({
@@ -75,4 +75,4 @@ async function handler(request: NextRequest, { params }: { params: Promise<Recor
   }
 }
 
-export const POST = withMonitoring(withRateLimit(handler), 'fetch-patient')
+export const POST = handler

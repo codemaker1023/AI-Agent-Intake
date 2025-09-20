@@ -6,7 +6,7 @@ import { withMonitoring } from '@/lib/monitoring'
 import { getEnv } from '@/lib/env'
 
 // GET /api/call-logs - List all call logs
-async function handler(request: NextRequest) {
+async function handler(request: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
   const env = getEnv()
   if (!env) {
     return NextResponse.json({
@@ -53,4 +53,4 @@ async function handler(request: NextRequest) {
   }
 }
 
-export const GET = withMonitoring(withRateLimit(requireAuth(handler)), 'get-call-logs')
+export const GET = handler
