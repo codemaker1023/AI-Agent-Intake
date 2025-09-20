@@ -4,7 +4,7 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { withMonitoring } from '@/lib/monitoring'
 import { getEnv } from '@/lib/env'
 
-async function handler() {
+async function handler(request: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
   try {
     const env = getEnv()
     const envCheck = {

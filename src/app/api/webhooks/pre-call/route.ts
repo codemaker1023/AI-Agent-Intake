@@ -5,7 +5,7 @@ import { withMonitoring } from '@/lib/monitoring'
 import { lookupPatient } from '@/lib/patient'
 import { getEnv } from '@/lib/env'
 
-async function handler(request: NextRequest) {
+async function handler(request: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
   const env = getEnv()
   if (!env) {
     return NextResponse.json({

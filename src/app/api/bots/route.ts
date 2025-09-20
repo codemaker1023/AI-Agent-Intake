@@ -7,7 +7,7 @@ import { validateRequest } from '@/lib/validation'
 import { getEnv } from '@/lib/env'
 
 // GET /api/bots - List all bots
-async function getHandler(request: NextRequest) {
+async function getHandler(request: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
   const env = getEnv()
   if (!env) {
     return NextResponse.json({
@@ -34,7 +34,7 @@ async function getHandler(request: NextRequest) {
 }
 
 // POST /api/bots - Create a new bot
-async function postHandler(request: NextRequest) {
+async function postHandler(request: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
   const env = getEnv()
   if (!env) {
     return NextResponse.json({
