@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateWebhookRequest } from '@/lib/webhook'
-import { validateRequest } from '@/lib/validation'
 import { withRateLimit } from '@/lib/rate-limit'
 import { withMonitoring } from '@/lib/monitoring'
 import { lookupPatient } from '@/lib/patient'
@@ -30,7 +29,7 @@ async function handler(request: NextRequest) {
   const body = webhookValidation.body
   console.log('Raw pre-call payload:', JSON.stringify(body, null, 2))
   const call = body.call || body // Handle if call is not wrapped
-  const { bot_id, from_number, to_number, attempt } = call
+  const { bot_id, from_number, attempt } = call
 
   try {
     console.log('Pre-call webhook received:', { bot_id, from_number, attempt })

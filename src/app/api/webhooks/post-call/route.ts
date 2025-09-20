@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { validateWebhookRequest } from '@/lib/webhook'
-import { validateRequest } from '@/lib/validation'
 import { withRateLimit } from '@/lib/rate-limit'
 import { withMonitoring } from '@/lib/monitoring'
 import { extractPatientIdFromCall } from '@/lib/patient'
@@ -45,11 +44,9 @@ async function handler(request: NextRequest) {
 
   // Map Openmic fields to our expected fields
   const call_id = sessionId
-  const from = fromPhoneNumber
-  const to = toPhoneNumber
   const bot_id = analysis?.bot_id || structured_data?.bot_id || sessionId // sessionId is the bot_id
   const patient_id = analysis?.patient_id || structured_data?.patient_id
-  const function_calls = [] // Openmic doesn't send function calls
+  const function_calls: Array<{ name: string; arguments: Record<string, unknown> }> = [] // Openmic doesn't send function calls
   const duration = createdAt && endedAt ? Math.floor((new Date(endedAt).getTime() - new Date(createdAt).getTime()) / 1000) : undefined
   const status = 'completed' // Assume completed for now
   const metadata = dynamicVariables
@@ -61,7 +58,7 @@ async function handler(request: NextRequest) {
 
   try {
     let bot = null
-    let effectiveBotId = analysis?.bot_id || structured_data?.bot_id || bot_id
+    const effectiveBotId = analysis?.bot_id || structured_data?.bot_id || bot_id
 
     // Extract bot name from payload if available
     const payloadBotName = analysis?.bot_name || structured_data?.bot_name || dynamicVariables?.bot_name
@@ -72,7 +69,7 @@ async function handler(request: NextRequest) {
     }
 
     console.log('Looking for bot with ID:', effectiveBotId)
-    let { data: botData, error: botError } = await supabase
+    const { data: botData, error: botError } = await supabase
       .from('bots')
       .select('id, name')
       .eq('uid', effectiveBotId)
@@ -109,7 +106,7 @@ async function handler(request: NextRequest) {
     const payloadMedicalId = analysis?.medical_id || structured_data?.medical_id || dynamicVariables?.medical_id
 
     let patientId = null
-    let extractedPatientId = analysis?.patient_id || structured_data?.patient_id || patient_id
+    const extractedPatientId = analysis?.patient_id || structured_data?.patient_id || patient_id
     let patientMedicalId = payloadMedicalId || extractedPatientId || await extractPatientIdFromCall(function_calls, transcriptText)
 
     if (!patientMedicalId && !payloadPatientName) {
