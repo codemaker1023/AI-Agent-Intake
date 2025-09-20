@@ -1,3 +1,5 @@
+import { NextRequest, NextResponse } from 'next/server';
+
 interface AlertConfig {
   webhookUrl?: string;
   email?: string;
@@ -11,7 +13,7 @@ class MonitoringService {
     this.alerts = alerts;
   }
 
-  logError(endpoint: string, error: any, context?: any) {
+  logError(endpoint: string, error: Error | unknown, context?: Record<string, unknown>) {
     console.error(`[${endpoint}] Error:`, error, context);
 
     const metric = this.metrics.get(endpoint) || { count: 0 };
@@ -37,7 +39,7 @@ class MonitoringService {
     return Object.fromEntries(this.metrics);
   }
 
-  private async sendWebhookAlert(endpoint: string, error: any, context?: any) {
+  private async sendWebhookAlert(endpoint: string, error: Error | unknown, context?: Record<string, unknown>) {
     try {
       await fetch(this.alerts.webhookUrl!, {
         method: 'POST',
@@ -63,10 +65,12 @@ export const monitoring = new MonitoringService({
   webhookUrl: process.env.ALERT_WEBHOOK_URL
 });
 
-export function withMonitoring(handler: Function, endpoint: string) {
-  return async (request: NextRequest, ...args: any[]) => {
+type ApiHandler = (request: NextRequest, context: unknown) => Promise<NextResponse> | NextResponse;
+
+export function withMonitoring(handler: ApiHandler, endpoint: string) {
+  return async (request: NextRequest, context: { params: Record<string, string> }) => {
     try {
-      const result = await handler(request, ...args);
+      const result = await handler(request, context);
       monitoring.logSuccess(endpoint);
       return result;
     } catch (error) {

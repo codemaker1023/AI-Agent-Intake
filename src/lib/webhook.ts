@@ -33,7 +33,7 @@ export function verifyWebhookSignature(request: NextRequest, body: string): bool
   return isValid;
 }
 
-export async function validateWebhookRequest(request: NextRequest): Promise<{ isValid: boolean; body: any; errors?: string[] }> {
+export async function validateWebhookRequest(request: NextRequest): Promise<{ isValid: boolean; body: unknown; errors?: string[] }> {
   try {
     const body = await request.text();
 

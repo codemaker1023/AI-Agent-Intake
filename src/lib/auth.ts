@@ -5,7 +5,7 @@ export function authenticateRequest(request: NextRequest): boolean {
   const env = getEnv();
   if (!env?.apiKey) {
     console.warn('API key not configured, skipping authentication');
-    return true; 
+    return true;
   }
 
   const authHeader = request.headers.get('authorization');
@@ -24,14 +24,16 @@ export function authenticateRequest(request: NextRequest): boolean {
   return isValid;
 }
 
-export function requireAuth(handler: Function) {
-  return async (request: NextRequest, ...args: any[]) => {
+export type ApiHandler = (request: NextRequest, context: unknown) => Promise<NextResponse> | NextResponse;
+
+export function requireAuth(handler: ApiHandler) {
+  return async (request: NextRequest, context: { params: Record<string, string> }) => {
     if (!authenticateRequest(request)) {
       return NextResponse.json({
         error: 'Unauthorized'
       }, { status: 401 });
     }
 
-    return handler(request, ...args);
+    return handler(request, context);
   };
 }

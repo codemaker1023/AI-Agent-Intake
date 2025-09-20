@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { sanitizeString, isValidMedicalId } from './validation';
 
 export interface PatientLookupResult {
-  patientData: any;
+  patientData: Record<string, unknown> | null;
   contextMessage: string;
 }
 
@@ -53,9 +53,9 @@ export async function lookupPatient(from?: string, medicalId?: string): Promise<
   return { patientData, contextMessage };
 }
 
-export async function extractPatientIdFromCall(functionCalls: any[], transcript: string): Promise<string | null> {
+export async function extractPatientIdFromCall(functionCalls: unknown[], transcript: string): Promise<string | null> {
   if (functionCalls && Array.isArray(functionCalls)) {
-    const patientFunctionCall = functionCalls.find((call: any) =>
+    const patientFunctionCall = functionCalls.find((call: unknown) =>
       call.function === 'fetch_patient' ||
       call.name === 'fetch_patient' ||
       (call.arguments && call.arguments.medical_id)

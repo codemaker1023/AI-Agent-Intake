@@ -5,10 +5,12 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 100;
 const WINDOW_MS = 15 * 60 * 1000;
 
-export function checkRateLimit(request: NextRequest): { allowed: boolean; response?: NextResponse } {
+type RateLimitResult = { allowed: true } | { allowed: false; response: NextResponse };
+
+export function checkRateLimit(request: NextRequest): RateLimitResult {
   const ip = request.headers.get('x-forwarded-for') ||
-             request.headers.get('x-real-ip') ||
-             'unknown';
+              request.headers.get('x-real-ip') ||
+              'unknown';
 
   const now = Date.now();
   const windowKey = `${ip}:${Math.floor(now / WINDOW_MS)}`;
@@ -45,13 +47,15 @@ export function checkRateLimit(request: NextRequest): { allowed: boolean; respon
   return { allowed: true };
 }
 
-export function withRateLimit(handler: Function) {
-  return async (request: NextRequest, ...args: any[]) => {
+type ApiHandler = (request: NextRequest, context: unknown) => Promise<NextResponse> | NextResponse;
+
+export function withRateLimit(handler: ApiHandler) {
+  return async (request: NextRequest, context: { params: Record<string, string> }) => {
     const rateLimit = checkRateLimit(request);
     if (!rateLimit.allowed) {
       return rateLimit.response;
     }
 
-    return handler(request, ...args);
+    return handler(request, context);
   };
 }

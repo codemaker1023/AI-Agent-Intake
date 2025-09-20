@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, ApiHandler } from '@/lib/auth'
 import { withRateLimit } from '@/lib/rate-limit'
 import { withMonitoring } from '@/lib/monitoring'
 
 // GET /api/bots/[id] - Get a specific bot
 async function getHandler(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<Record<string, string>> }
+): Promise<NextResponse> {
   try {
+    const resolvedParams = await params;
     const { data, error } = await supabase
       .from('bots')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (error) {
@@ -31,9 +32,10 @@ async function getHandler(
 // PUT /api/bots/[id] - Update a bot
 async function putHandler(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<Record<string, string>> }
+): Promise<NextResponse> {
   try {
+    const resolvedParams = await params;
     const body = await request.json()
     const { uid, name, prompt, domain, is_active } = body
 
@@ -47,7 +49,7 @@ async function putHandler(
         is_active,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single()
 
@@ -66,13 +68,14 @@ async function putHandler(
 // DELETE /api/bots/[id] - Delete a bot
 async function deleteHandler(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<Record<string, string>> }
+): Promise<NextResponse> {
   try {
+    const resolvedParams = await params;
     const { error } = await supabase
       .from('bots')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
 
     if (error) {
       console.error('Error deleting bot:', error)
@@ -86,6 +89,6 @@ async function deleteHandler(
   }
 }
 
-export const GET = withMonitoring(withRateLimit(getHandler), 'get-bot')
-export const PUT = withMonitoring(withRateLimit(putHandler), 'update-bot')
-export const DELETE = withMonitoring(withRateLimit(deleteHandler), 'delete-bot')
+export const GET = getHandler
+export const PUT = putHandler
+export const DELETE = deleteHandler

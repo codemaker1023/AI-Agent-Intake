@@ -26,9 +26,9 @@ export function isValidMedicalId(id: string): boolean {
 }
 
 // Sanitize and validate webhook payload
-export function validateWebhookPayload(body: any): { isValid: boolean; sanitized: any; errors: string[] } {
+export function validateWebhookPayload(body: unknown): { isValid: boolean; sanitized: Record<string, unknown>; errors: string[] } {
   const errors: string[] = [];
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
 
   // Common fields for both pre-call and post-call
   if (body.call_id) {
@@ -103,7 +103,7 @@ export function validateWebhookPayload(body: any): { isValid: boolean; sanitized
 }
 
 // Middleware function for input validation
-export async function validateRequest(request: NextRequest): Promise<{ isValid: boolean; body: any; response?: NextResponse }> {
+export async function validateRequest(request: NextRequest): Promise<{ isValid: boolean; body: unknown; response?: NextResponse }> {
   try {
     const body = await request.json();
     const validation = validateWebhookPayload(body);
