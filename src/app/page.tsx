@@ -247,7 +247,7 @@ export default function Home() {
                         type="text"
                         value={formData.uid}
                         onChange={(e) => setFormData({ ...formData, uid: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 text-black rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
                         placeholder="med-assistant-001"
                         required
                         disabled={submitting}
@@ -261,7 +261,7 @@ export default function Home() {
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 text-black rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
                         placeholder="Medical Intake Assistant"
                         required
                         disabled={submitting}
@@ -274,7 +274,7 @@ export default function Home() {
                     <select
                       value={formData.domain}
                       onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 text-black rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
                       disabled={submitting}
                     >
                       <option value="medical">Medical</option>
@@ -290,7 +290,7 @@ export default function Home() {
                     <textarea
                       value={formData.prompt}
                       onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 text-black rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 resize-none"
                       rows={4}
                       placeholder="Instructions for the AI assistant..."
                       required
